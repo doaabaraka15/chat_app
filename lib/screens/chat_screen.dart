@@ -41,93 +41,93 @@ class _ChatScreenState extends State<ChatScreen> with Helper {
     CollectionReference users =
         FirebaseFirestore.instance.collection('messages');
 
-    return StreamBuilder<QuerySnapshot>(
-      stream: FBFirestore().read(),
-      builder: (context, snapshot) {
-        if (snapshot.hasData) {
-          print(snapshot.data!.docs);
-          return Scaffold(
-            appBar: AppBar(
-              centerTitle: true,
-              automaticallyImplyLeading: false,
-              backgroundColor: KprimaryColor,
-              title: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Image.asset(KLogo, width: 60),
-                  const Text(
-                    'Chat',
-                    style: TextStyle(
-                        fontFamily: 'Pacifico-Regular',
-                        fontWeight: FontWeight.bold),
+    return Scaffold(
+        appBar: AppBar(
+          centerTitle: true,
+          automaticallyImplyLeading: false,
+          backgroundColor: KprimaryColor,
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(KLogo, width: 60),
+              const Text(
+                'Chat',
+                style: TextStyle(
+                    fontFamily: 'Pacifico-Regular',
+                    fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        ),
+        body: StreamBuilder<QuerySnapshot>(
+          stream: FBFirestore().read(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasData) {
+              return Column(children: [
+                Expanded(
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    reverse: true,
+                    shrinkWrap: true,
+                    itemBuilder: (context, index) {
+                      var content = snapshot.data!.docs[index];
+                      return content['email'] == message.email
+                          ? ChatBubble(content: content['content'])
+                          : ChatBubble(
+                              content: content['content'],
+                              bottomLeft: 30,
+                              bottomRight: 0,
+                              color: const Color(0xff006d84),
+                              alignment: Alignment.centerRight,
+                            );
+                    },
+                    itemCount: snapshot.data!.docs.length,
                   ),
-                ],
-              ),
-            ),
-            body: Column(children: [
-              Expanded(
-                child: ListView.builder(
-                  controller: _scrollController,
-                  reverse: true,
-                  shrinkWrap: true,
-                  itemBuilder: (context, index) {
-                    var content = snapshot.data!.docs[index];
-                    return content['email'] == message.email
-                        ? ChatBubble(content: content['content'])
-                        : ChatBubble(
-                            content: content['content'],
-                            bottomLeft: 30,
-                            bottomRight: 0,
-                            color: Color(0xff006d84),
-                            alignment: Alignment.centerRight,
-                          );
-                  },
-                  itemCount: snapshot.data!.docs.length,
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: TextField(
-                  onSubmitted: (data) async {
-                    await performSendMessage();
-                    _content.clear();
-                    scrollToTheLastMessage();
-                  },
-                  controller: _content,
-                  decoration: InputDecoration(
-                      hintText: 'Send message',
-                      suffixIcon: IconButton(
-                          onPressed: () async {
-                            await performSendMessage();
-                            _content.clear();
-                            scrollToTheLastMessage();
-                          },
-                          icon: const Icon(
-                            Icons.send,
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextField(
+                    onSubmitted: (data) async {
+                      await performSendMessage();
+                      _content.clear();
+                      scrollToTheLastMessage();
+                    },
+                    controller: _content,
+                    decoration: InputDecoration(
+                        hintText: 'Send message',
+                        suffixIcon: IconButton(
+                            onPressed: () async {
+                              await performSendMessage();
+                              _content.clear();
+                              scrollToTheLastMessage();
+                            },
+                            icon: const Icon(
+                              Icons.send,
+                              color: KprimaryColor,
+                            )),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: const BorderSide(
                             color: KprimaryColor,
-                          )),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15),
-                        borderSide: const BorderSide(
-                          color: KprimaryColor,
+                          ),
                         ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15),
-                        borderSide: const BorderSide(
-                          color: KprimaryColor,
-                        ),
-                      )),
-                ),
-              )
-            ]),
-          );
-        } else {
-          return const Center(child: Text('loading...'));
-        }
-      },
-    );
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: const BorderSide(
+                            color: KprimaryColor,
+                          ),
+                        )),
+                  ),
+                )
+              ]);
+            } else {
+              return const Center(child: Text('Start chatting with friends'));
+            }
+          },
+        ));
   }
 
   Future<void> performSendMessage() async {
